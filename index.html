@@ -1,423 +1,282 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPT Decoder-Only Architecture</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 2.5em;
-            font-weight: bold;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .architecture-diagram {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 30px 0;
-        }
-
-        .decoder-block {
-            width: 300px;
-            height: 120px;
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-            border: 3px solid #667eea;
-            border-radius: 15px;
-            margin: 15px 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-        }
-
-        .decoder-block:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-        }
-
-        .decoder-block h3 {
-            margin: 5px 0;
-            color: #333;
-            font-size: 1.1em;
-        }
-
-        .decoder-block p {
-            margin: 0;
-            font-size: 0.9em;
-            color: #666;
-            text-align: center;
-        }
-
-        .arrow {
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 30px solid #667eea;
-            margin: 5px 0;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        .attention-mask {
-            width: 400px;
-            height: 300px;
-            background: #f8f9fa;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            margin: 20px auto;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .mask-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            grid-template-rows: repeat(6, 1fr);
-            height: 100%;
-            gap: 2px;
-            padding: 10px;
-        }
-
-        .mask-cell {
-            background: #e3f2fd;
-            border-radius: 3px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-        }
-
-        .mask-cell.visible {
-            background: #4caf50;
-            color: white;
-        }
-
-        .mask-cell.masked {
-            background: #f44336;
-            color: white;
-        }
-
-        .mask-cell:hover {
-            transform: scale(1.1);
-        }
-
-        .info-section {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 10px;
-            margin: 30px 0;
-        }
-
-        .info-section h2 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-
-        .info-section p {
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-        .highlight {
-            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 5px solid #667eea;
-            margin: 20px 0;
-        }
-
-        .interactive-demo {
-            text-align: center;
-            margin: 30px 0;
-        }
-
-        .demo-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            margin: 10px;
-        }
-
-        .demo-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-        }
-
-        .token-sequence {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-
-        .token {
-            background: #667eea;
-            color: white;
-            padding: 8px 15px;
-            margin: 5px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-
-        .token.current {
-            background: #4caf50;
-            transform: scale(1.1);
-        }
-
-        .token.future {
-            background: #f44336;
-            opacity: 0.5;
-        }
-
-        @media (max-width: 768px) {
-            .content {
-                padding: 20px;
-            }
-            
-            .decoder-block {
-                width: 250px;
-            }
-            
-            .attention-mask {
-                width: 300px;
-                height: 250px;
-            }
-            
-            .mask-grid {
-                grid-template-columns: repeat(4, 1fr);
-                grid-template-rows: repeat(4, 1fr);
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GPT Decoder-Only Architecture</title>
+  <style>
+    /* --- CSS (same as yours, slightly optimized) --- */
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 2.5em;
+      font-weight: bold;
+    }
+    .content {
+      padding: 40px;
+    }
+    .architecture-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 30px 0;
+    }
+    .decoder-block {
+      width: 300px;
+      height: 120px;
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+      border: 3px solid #667eea;
+      border-radius: 15px;
+      margin: 15px 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .decoder-block:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    }
+    .decoder-block.active {
+      border-color: #4caf50;
+      background: #d0f0c0;
+    }
+    .arrow {
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 30px solid #667eea;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .info-section {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 10px;
+      margin: 30px 0;
+    }
+    .info-section h2 {
+      color: #667eea;
+    }
+    .highlight {
+      background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+      padding: 20px;
+      border-radius: 10px;
+      border-left: 5px solid #667eea;
+      margin: 20px 0;
+    }
+    .interactive-demo {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .demo-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 1em;
+      margin: 10px;
+    }
+    .demo-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .attention-mask {
+      width: 400px;
+      height: 300px;
+      background: #f8f9fa;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      margin: 20px auto;
+      position: relative;
+      overflow: hidden;
+    }
+    .mask-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(6, 1fr);
+      height: 100%;
+      gap: 2px;
+      padding: 10px;
+    }
+    .mask-cell {
+      background: #e3f2fd;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8em;
+      transition: all 0.3s ease;
+    }
+    .mask-cell.visible {
+      background: #4caf50;
+      color: white;
+    }
+    .mask-cell.masked {
+      background: #f44336;
+      color: white;
+    }
+    .token-sequence {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .token {
+      background: #667eea;
+      color: white;
+      padding: 8px 15px;
+      margin: 5px;
+      border-radius: 20px;
+      font-size: 0.9em;
+    }
+    .token.current {
+      background: #4caf50;
+      transform: scale(1.1);
+    }
+    .token.future {
+      background: #f44336;
+      opacity: 0.5;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>GPT Decoder-Only Architecture</h1>
-            <p>Autoregressive Language Model with Masked Self-Attention</p>
-        </div>
-        
-        <div class="content">
-            <div class="info-section">
-                <h2>GPT Architecture Overview</h2>
-                <p>GPT models are based on a decoder-only transformer architecture. Unlike encoder-decoder models, GPT uses only the transformer decoder stack, focusing on autoregressive generation — predicting the next token based on previous tokens.</p>
-            </div>
-
-            <div class="architecture-diagram">
-                <div class="decoder-block" onclick="highlightBlock(this)">
-                    <h3>Output Layer</h3>
-                    <p>Token Prediction</p>
-                </div>
-                
-                <div class="arrow"></div>
-                
-                <div class="decoder-block" onclick="highlightBlock(this)">
-                    <h3>Decoder Block N</h3>
-                    <p>Self-Attention + Feed Forward</p>
-                </div>
-                
-                <div class="arrow"></div>
-                
-                <div class="decoder-block" onclick="highlightBlock(this)">
-                    <h3>...</h3>
-                    <p>Multiple Decoder Layers</p>
-                </div>
-                
-                <div class="arrow"></div>
-                
-                <div class="decoder-block" onclick="highlightBlock(this)">
-                    <h3>Decoder Block 1</h3>
-                    <p>Masked Self-Attention</p>
-                </div>
-                
-                <div class="arrow"></div>
-                
-                <div class="decoder-block" onclick="highlightBlock(this)">
-                    <h3>Input Embeddings</h3>
-                    <p>Token + Position Embeddings</p>
-                </div>
-            </div>
-
-            <div class="info-section">
-                <h2>Masked Self-Attention</h2>
-                <p>GPT employs masked self-attention to ensure the model only attends to tokens up to the current position during training and generation. This prevents "seeing the future" tokens, preserving the causal structure necessary for language modeling.</p>
-                
-                <div class="highlight">
-                    <strong>Key Principle:</strong> Each token can only attend to itself and previous tokens in the sequence, never to future tokens.
-                </div>
-            </div>
-
-            <div class="interactive-demo">
-                <h2>Interactive Attention Mask Demonstration</h2>
-                <p>Click the button below to see how the attention mask works:</p>
-                <button class="demo-button" onclick="animateAttentionMask()">Show Attention Mask</button>
-                <button class="demo-button" onclick="resetMask()">Reset</button>
-            </div>
-
-            <div class="attention-mask">
-                <div class="mask-grid" id="maskGrid">
-                    <!-- Grid cells will be generated by JavaScript -->
-                </div>
-            </div>
-
-            <div class="interactive-demo">
-                <h2>Token Sequence Example</h2>
-                <p>Example: "The cat sat on the mat"</p>
-                <div class="token-sequence" id="tokenSequence">
-                    <div class="token">The</div>
-                    <div class="token">cat</div>
-                    <div class="token">sat</div>
-                    <div class="token">on</div>
-                    <div class="token">the</div>
-                    <div class="token">mat</div>
-                </div>
-                <button class="demo-button" onclick="demonstrateTokenAttention()">Show Token Attention</button>
-            </div>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>GPT Decoder-Only Architecture</h1>
+      <p>Autoregressive Language Model with Masked Self-Attention</p>
     </div>
 
-    <script>
-        // Initialize the attention mask grid
-        function initializeMaskGrid() {
-            const grid = document.getElementById('maskGrid');
-            grid.innerHTML = '';
-            
-            for (let i = 0; i < 36; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'mask-cell';
-                cell.textContent = '0';
-                grid.appendChild(cell);
-            }
-        }
+    <div class="content">
+      <div class="info-section">
+        <h2>GPT Architecture Overview</h2>
+        <p>GPT uses only the decoder part of the transformer, trained to predict the next token using masked self-attention.</p>
+      </div>
 
-        // Animate the attention mask to show causal masking
-        function animateAttentionMask() {
-            const cells = document.querySelectorAll('.mask-cell');
-            const gridSize = 6;
-            
-            cells.forEach((cell, index) => {
-                const row = Math.floor(index / gridSize);
-                const col = index % gridSize;
-                
-                setTimeout(() => {
-                    if (col <= row) {
-                        cell.classList.add('visible');
-                        cell.classList.remove('masked');
-                        cell.textContent = '1';
-                    } else {
-                        cell.classList.add('masked');
-                        cell.classList.remove('visible');
-                        cell.textContent = '0';
-                    }
-                }, (row * gridSize + col) * 50);
-            });
-        }
+      <div class="architecture-diagram">
+        <div class="decoder-block" onclick="highlightBlock(this)"> <h3>Output Layer</h3><p>Token Prediction</p></div>
+        <div class="arrow"></div>
+        <div class="decoder-block" onclick="highlightBlock(this)"> <h3>Decoder Block N</h3><p>Self-Attention + FFN</p></div>
+        <div class="arrow"></div>
+        <div class="decoder-block" onclick="highlightBlock(this)"> <h3>...</h3><p>Multiple Layers</p></div>
+        <div class="arrow"></div>
+        <div class="decoder-block" onclick="highlightBlock(this)"> <h3>Decoder Block 1</h3><p>Masked Self-Attention</p></div>
+        <div class="arrow"></div>
+        <div class="decoder-block" onclick="highlightBlock(this)"> <h3>Input Embeddings</h3><p>Token + Position</p></div>
+      </div>
 
-        // Reset the attention mask
-        function resetMask() {
-            const cells = document.querySelectorAll('.mask-cell');
-            cells.forEach(cell => {
-                cell.classList.remove('visible', 'masked');
-                cell.textContent = '0';
-            });
-        }
+      <div class="info-section">
+        <h2>Masked Self-Attention</h2>
+        <p>Each token attends only to itself and previous tokens. This ensures autoregressive behavior.</p>
+        <div class="highlight">
+          <strong>Key Rule:</strong> No token can "see" the future during training or inference.
+        </div>
+      </div>
 
-        // Highlight decoder blocks when clicked
-        function highlightBlock(block) {
-            // Remove previous highlights
-            document.querySelectorAll('.decoder-block').forEach(b => {
-                b.style.transform = '';
-                b.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)';
-            });
-            
-            // Highlight clicked block
-            block.style.transform = 'scale(1.05)';
-            block.style.boxShadow = '0 15px 30px rgba(102, 126, 234, 0.3)';
-        }
+      <div class="interactive-demo">
+        <h2>Interactive Attention Mask</h2>
+        <button class="demo-button" onclick="animateAttentionMask()">Show Attention Mask</button>
+        <button class="demo-button" onclick="resetMask()">Reset</button>
+      </div>
 
-        // Demonstrate token attention pattern
-        function demonstrateTokenAttention() {
-            const tokens = document.querySelectorAll('.token');
-            let currentIndex = 0;
-            
-            function showAttentionForToken(index) {
-                tokens.forEach((token, i) => {
-                    token.classList.remove('current', 'future');
-                    
-                    if (i === index) {
-                        token.classList.add('current');
-                    } else if (i > index) {
-                        token.classList.add('future');
-                    }
-                });
-            }
-            
-            const interval = setInterval(() => {
-                showAttentionForToken(currentIndex);
-                currentIndex++;
-                
-                if (currentIndex >= tokens.length) {
-                    currentIndex = 0;
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        tokens.forEach(token => {
-                            token.classList.remove('current', 'future');
-                        });
-                    }, 1000);
-                }
-            }, 800);
-        }
+      <div class="attention-mask">
+        <div class="mask-grid" id="maskGrid"></div>
+      </div>
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeMaskGrid();
-        });
-    </script>
+      <div class="interactive-demo">
+        <h2>Token Sequence</h2>
+        <p>"The cat sat on the mat"</p>
+        <div class="token-sequence" id="tokenSequence">
+          <div class="token">The</div>
+          <div class="token">cat</div>
+          <div class="token">sat</div>
+          <div class="token">on</div>
+          <div class="token">the</div>
+          <div class="token">mat</div>
+        </div>
+        <button class="demo-button" onclick="demonstrateTokenAttention()">Show Token Attention</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Highlight clicked decoder block
+    function highlightBlock(element) {
+      document.querySelectorAll('.decoder-block').forEach(block => block.classList.remove('active'));
+      element.classList.add('active');
+    }
+
+    // Create the attention mask grid
+    const grid = document.getElementById('maskGrid');
+    function createMaskGrid() {
+      grid.innerHTML = '';
+      for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 6; col++) {
+          const cell = document.createElement('div');
+          cell.classList.add('mask-cell');
+          cell.textContent = row >= col ? '✓' : '✗';
+          cell.classList.add(row >= col ? 'visible' : 'masked');
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    function resetMask() {
+      createMaskGrid();
+    }
+
+    function animateAttentionMask() {
+      const cells = document.querySelectorAll('.mask-cell');
+      cells.forEach((cell, i) => {
+        cell.style.opacity = 0;
+        setTimeout(() => { cell.style.opacity = 1; }, i * 30);
+      });
+    }
+
+    function demonstrateTokenAttention() {
+      const tokens = document.querySelectorAll('.token');
+      tokens.forEach((token, i) => {
+        setTimeout(() => {
+          tokens.forEach(t => t.classList.remove('current', 'future'));
+          token.classList.add('current');
+          for (let j = i + 1; j < tokens.length; j++) {
+            tokens[j].classList.add('future');
+          }
+        }, i * 700);
+      });
+    }
+
+    // Initial render
+    createMaskGrid();
+  </script>
 </body>
 </html>
